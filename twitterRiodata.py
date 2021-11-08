@@ -11,13 +11,18 @@ import tensorflow as tf
 
 
 
+#Get current date
+today = date.today()
+day = today.strftime("%Y-%m-%d")
+
+
 #Basic input to fill for the code to works
 consumer_key = ""
 consumer_secret_key = ""
 access_token_key = ""
 access_secret_token_key = ""
 key_words = "Bitcoin"
-date_until = "2021-10-15"
+date_until = date
 
 
 #Authantification
@@ -52,7 +57,8 @@ def clean_df(tweet_df):
         twt_txt = re.sub('\[.*?\]',' ', twt_txt)
         twt_txt = re.sub("[^a-z0-9]"," ", twt_txt)
         twt_txt = twt_txt.split()
-        stopwords = ["for", "on", "an", "a", "of", "and", "in", "the", "to", "from", "rt"]
+        #stopwords = ["for", "on", "an", "a", "of", "and", "in", "the", "to", "from", "rt"]
+        stopwords = ["rt"]
         twt_txt = [w for w in twt_txt if not w in stopwords]
         twt_txt = " ".join(word for word in twt_txt)
         tweet_txt_df.append(twt_txt)
@@ -63,14 +69,49 @@ def clean_df(tweet_df):
     return clean_tweet_df
 
 
-#NLP Model using BERT basic model
+df_1 = search(key_words, date_until) 
+df_2 = clean_df(df_1)
+df = pd.DataFrame(df_2)
 
+df['text'] = pd.Series([x for x in df['Clean_text'] if len(x)>=30])
+df = df.drop(columns='Clean_text')
+df = df.dropna(axis=0)
 
+#NLP Model Incrementation using Bert
+tokeniser = AutoTokenizer.from_pretrained('nlptown/bert-base-multilingual-uncased-sentiment')
+model = AutoModelForSequenceClassification.from_pretrained('nlptown/bert-base-multilingual-uncased-sentiment')
 
+#Calculating the sentiment score 
+def sentiment_score(text):
+    token = tokeniser.encode(text, return_tensors='pt')
+    result = model(token)
+    return int(torch.argmax(result.logits))+1
 
+df['sentiment'] = df['text'].apply(lambda x: sentiment_score(x[:512]))
 
+#Groupby Date (Daily)
+def groupby_date_daily(df):
+    df = df.groupby(pd.Grouper(key='created_at', freq='B')).mean()
+    df['Date'] = df.index
+    df['Date'] = df['Date'].apply(lambda a: pd.to_datetime(a).date())
+    df.reset_index(inplace=True)
+    df.dropna(inplace=True)
+    df['sentiment'] = df['sentiment'].astype(int)
+    df = df[['Date', 'sentiment']]
+    return df
 
+df = groupby_date_daily(df)
 
+#Append to existing excel file
+book = load_workbook('C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx')#Where you want to put your data
+writer = pd.ExcelWriter('C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx', engine='openpyxl')
+writer.book = book
+writer.sheets = {ws.title: ws for ws in book.worksheets}
+
+for sheetname in writer.sheets:
+    df.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row, index = True,header= False)
+
+writer.save()
 
 #Main function to call
 def main():

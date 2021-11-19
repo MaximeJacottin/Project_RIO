@@ -25,6 +25,9 @@ key_words = "Bitcoin"
 date_until = date
 
 
+#Workbook sheet path 
+workbook_path = 'C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx'#You need to put your working path here
+
 #Authantification
 auth = tw.OAuthHandler(consumer_key, consumer_secret_key)
 auth.set_access_token(access_token_key, access_secret_token_key)
@@ -33,6 +36,7 @@ api = tw.API(auth, wait_on_rate_limit=True)
 
 #Search with the Twitter API the tweets given a keyword and a date until you want the tweets
 def search(key_words, date_until):
+
     query = tw.Cursor(api.search_tweets, q=key_words, lang="en", until=date_until).items(10)
     tweet = [[tweet.created_at, tweet.text] for tweet in query]
     tweet_df = pd.DataFrame(data=tweet, 
@@ -69,20 +73,13 @@ def clean_df(tweet_df):
     return clean_tweet_df
 
 
-df_1 = search(key_words, date_until) 
-df_2 = clean_df(df_1)
-df = pd.DataFrame(df_2)
-
-df['text'] = pd.Series([x for x in df['Clean_text'] if len(x)>=30])
-df = df.drop(columns='Clean_text')
-df = df.dropna(axis=0)
-
 #NLP Model Incrementation using Bert
 tokeniser = AutoTokenizer.from_pretrained('nlptown/bert-base-multilingual-uncased-sentiment')
 model = AutoModelForSequenceClassification.from_pretrained('nlptown/bert-base-multilingual-uncased-sentiment')
 
 #Calculating the sentiment score 
 def sentiment_score(text):
+
     token = tokeniser.encode(text, return_tensors='pt')
     result = model(token)
     return int(torch.argmax(result.logits))+1
@@ -91,6 +88,7 @@ df['sentiment'] = df['text'].apply(lambda x: sentiment_score(x[:512]))
 
 #Groupby Date (Daily)
 def groupby_date_daily(df):
+
     df = df.groupby(pd.Grouper(key='created_at', freq='B')).mean()
     df['Date'] = df.index
     df['Date'] = df['Date'].apply(lambda a: pd.to_datetime(a).date())
@@ -103,17 +101,10 @@ def groupby_date_daily(df):
 df = groupby_date_daily(df)
 
 
-#Main function to call
-def main():
-    df_1 = search(key_words, date_until)
-    df_2 = clean_df(df_1)
-    df = pd.DataFrame(df_2)
-    df['text'] = pd.Series([x for x in df['Clean_text'] if len(x)>=30])
-    df = df.drop(columns='Clean_text')
-    df = df.dropna(axis=0)
-    df = groupby_date_daily(df)
-    book = load_workbook('C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx')#Where you want to put your data
-    writer = pd.ExcelWriter('C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx', engine='openpyxl')
+def to_workbook_file(workbook_path):
+
+    book = load_workbook(workbook_path)#Where you want to put your data
+    writer = pd.ExcelWriter(workbook_path, engine='openpyxl')
     writer.book = book
     writer.sheets = {ws.title: ws for ws in book.worksheets}
 
@@ -121,6 +112,22 @@ def main():
         df.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row, index = True,header= False)
 
     writer.save()
+
+
+
+#Main function to call
+def main():
+
+    df_1 = search(key_words, date_until)
+    df_2 = clean_df(df_1)
+    df = pd.DataFrame(df_2)
+    df['text'] = pd.Series([x for x in df['Clean_text'] if len(x)>=30])
+    df = df.drop(columns='Clean_text')
+    df = df.dropna(axis=0)
+    df = groupby_date_daily(df)
+    to_excel_file = to_workbook_file(workbook_path)
+
+
 
 if __name__ == "__main__":
     main()

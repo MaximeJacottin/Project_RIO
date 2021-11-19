@@ -102,16 +102,6 @@ def groupby_date_daily(df):
 
 df = groupby_date_daily(df)
 
-#Append to existing excel file
-book = load_workbook('C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx')#Where you want to put your data
-writer = pd.ExcelWriter('C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx', engine='openpyxl')
-writer.book = book
-writer.sheets = {ws.title: ws for ws in book.worksheets}
-
-for sheetname in writer.sheets:
-    df.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row, index = True,header= False)
-
-writer.save()
 
 #Main function to call
 def main():

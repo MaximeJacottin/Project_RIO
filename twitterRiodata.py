@@ -15,6 +15,7 @@ from openpyxl import load_workbook
 warnings.filterwarnings("ignore")#runs two times to not have the warnings
 
 
+#test
 #Get current date
 today = date.today()
 day = today.strftime("%Y-%m-%d")

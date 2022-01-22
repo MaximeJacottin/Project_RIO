@@ -1,14 +1,18 @@
 import os
 import re
+import torch
+import requests
+import tensorflow as tf
+import warnings
 import tweepy as tw
 import pandas as pd
 import numpy as np
 from transformers import BertTokenizer, TFBertForSequenceClassification
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
-import requests
-import tensorflow as tf
+from datetime import date
+from openpyxl import load_workbook
 
+warnings.filterwarnings("ignore")#runs two times to not have the warnings
 
 
 #Get current date
@@ -22,7 +26,7 @@ consumer_secret_key = ""
 access_token_key = ""
 access_secret_token_key = ""
 key_words = "Bitcoin"
-date_until = date
+date_until = day
 
 
 #Workbook sheet path 
@@ -72,7 +76,6 @@ def clean_df(tweet_df):
 
     return clean_tweet_df
 
-
 #NLP Model Incrementation using Bert
 tokeniser = AutoTokenizer.from_pretrained('nlptown/bert-base-multilingual-uncased-sentiment')
 model = AutoModelForSequenceClassification.from_pretrained('nlptown/bert-base-multilingual-uncased-sentiment')
@@ -84,7 +87,6 @@ def sentiment_score(text):
     result = model(token)
     return int(torch.argmax(result.logits))+1
 
-df['sentiment'] = df['text'].apply(lambda x: sentiment_score(x[:512]))
 
 #Groupby Date (Daily)
 def groupby_date_daily(df):
@@ -98,10 +100,8 @@ def groupby_date_daily(df):
     df = df[['Date', 'sentiment']]
     return df
 
-df = groupby_date_daily(df)
 
-
-def to_workbook_file(workbook_path):
+def to_workbook_file(dataframe, workbook_path):
 
     book = load_workbook(workbook_path)#Where you want to put your data
     writer = pd.ExcelWriter(workbook_path, engine='openpyxl')
@@ -114,7 +114,6 @@ def to_workbook_file(workbook_path):
     writer.save()
 
 
-
 #Main function to call
 def main():
 
@@ -124,9 +123,9 @@ def main():
     df['text'] = pd.Series([x for x in df['Clean_text'] if len(x)>=30])
     df = df.drop(columns='Clean_text')
     df = df.dropna(axis=0)
+    df['sentiment'] = df['text'].apply(lambda x: sentiment_score(x[:512]))
     df = groupby_date_daily(df)
-    to_excel_file = to_workbook_file(workbook_path)
-
+    to_excel_file = to_workbook_file(df, workbook_path)
 
 
 if __name__ == "__main__":

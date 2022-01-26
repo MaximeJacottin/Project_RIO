@@ -99,7 +99,7 @@ def groupby_date_daily(df):
     df.dropna(inplace=True)
     df['sentiment'] = df['sentiment'].astype(int)
     df = df[['Date', 'sentiment']]
-    return df
+    return df 
 
 
 def to_workbook_file(dataframe, workbook_path):
@@ -115,7 +115,7 @@ def to_workbook_file(dataframe, workbook_path):
     writer.save()
 
 
-#Main function to call
+#Main function to call and execute
 def main():
 
     df_1 = search(key_words, date_until)

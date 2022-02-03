@@ -1,8 +1,7 @@
 import os
 import re
-import torch
 import requests
-import tensorflow as tf
+import torch
 import warnings
 import tweepy as tw
 import pandas as pd
@@ -31,7 +30,7 @@ date_until = day
 
 
 #Workbook sheet path 
-workbook_path = 'C:/Users/Maxime/Desktop/Code/Projet Python/Projet Rio data/Sentiment_Analysis.xlsx'#You need to put your working path here
+workbook_path = 'C:/Users/Maxime/Desktop/Code/Project Data/Sentiment_Analysis.xlsx'#You need to put your working path here
 
 #Authantification
 auth = tw.OAuthHandler(consumer_key, consumer_secret_key)
@@ -42,7 +41,7 @@ api = tw.API(auth, wait_on_rate_limit=True)
 #Search with the Twitter API the tweets given a keyword and a date until you want the tweets
 def search(key_words, date_until):
 
-    query = tw.Cursor(api.search_tweets, q=key_words, lang="en", until=date_until).items(10)
+    query = tw.Cursor(api.search_tweets, q=key_words, lang="en", until=date_until).items(1)
     tweet = [[tweet.created_at, tweet.text] for tweet in query]
     tweet_df = pd.DataFrame(data=tweet, 
                     columns=['created_at', 'text'])
@@ -105,14 +104,14 @@ def groupby_date_daily(df):
 def to_workbook_file(dataframe, workbook_path):
 
     book = load_workbook(workbook_path)#Where you want to put your data
-    writer = pd.ExcelWriter(workbook_path, engine='openpyxl')
+    writer = pd.ExcelWriter(workbook_path, engine='openpyxl', if_sheet_exists='overlay')
     writer.book = book
     writer.sheets = {ws.title: ws for ws in book.worksheets}
 
     for sheetname in writer.sheets:
-        df.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row, index = True,header= False)
-
+        dataframe.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row, index = True,header= False)
     writer.save()
+    writer.close()
 
 
 #Main function to call and execute

@@ -101,22 +101,10 @@ def groupby_date_daily(df):
     return df 
 
 
-def to_workbook_file(dataframe, workbook_path):
-
-    book = load_workbook(workbook_path)#Where you want to put your data
-    writer = pd.ExcelWriter(workbook_path, engine='openpyxl', if_sheet_exists='overlay')
-    writer.book = book
-    writer.sheets = {ws.title: ws for ws in book.worksheets}
-
-    for sheetname in writer.sheets:
-        dataframe.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row, index = True,header= False)
-    writer.save()
-    writer.close()
-
-
 #Main function to call and execute
 def main():
 
+    #Get the Data 
     df_1 = search(key_words, date_until)
     df_2 = clean_df(df_1)
     df = pd.DataFrame(df_2)
@@ -125,7 +113,18 @@ def main():
     df = df.dropna(axis=0)
     df['sentiment'] = df['text'].apply(lambda x: sentiment_score(x[:512]))
     df = groupby_date_daily(df)
-    to_excel_file = to_workbook_file(df, workbook_path)
+
+    #To Excel File, cannot implement it in a Function, create too much corruption problem
+    book = load_workbook(workbook_path)
+    writer = pd.ExcelWriter(workbook_path, engine='openpyxl', if_sheet_exists='overlay')
+    writer.book = book
+    writer.sheets = {ws.title: ws for ws in book.worksheets}
+
+    for sheetname in writer.sheets:
+        df.to_excel(writer,sheet_name=sheetname, startrow=writer.sheets[sheetname].max_row,index = True, header= False)
+
+    writer.save()
+    writer.close()
 
 
 if __name__ == "__main__":

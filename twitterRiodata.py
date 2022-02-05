@@ -14,7 +14,7 @@ from openpyxl import load_workbook
 warnings.filterwarnings("ignore")#runs two times to not have the warnings
 
 
-#test
+
 #Get current date
 today = date.today()
 day = today.strftime("%Y-%m-%d")
@@ -114,7 +114,7 @@ def main():
     df['sentiment'] = df['text'].apply(lambda x: sentiment_score(x[:512]))
     df = groupby_date_daily(df)
 
-    #To Excel File, cannot implement it in a Function, create too much corruption problem
+    #To Excel File, cannot implement it in a Function, create too much Excel corruption problem
     book = load_workbook(workbook_path)
     writer = pd.ExcelWriter(workbook_path, engine='openpyxl', if_sheet_exists='overlay')
     writer.book = book
